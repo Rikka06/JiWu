@@ -17,6 +17,8 @@ export interface TagState {
   stars: number;
   style: string; // 评价语气
   dishes: string[];
+  useEmoji: boolean; // 是否使用表情
+  structure: 'paragraph' | 'segmented'; // 结构：一段式 vs 分段
 }
 
 export interface ApiUsage {

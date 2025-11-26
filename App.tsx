@@ -20,13 +20,15 @@ export default function App() {
     persona: PERSONAS[0],
     motivation: MOTIVATIONS[0],
     people: 2, // Default 2 people
-    wordCount: 80, // Default 80 words
+    wordCount: 60, // Default 60 words
     budget: BUDGETS[1], // Default normal budget
     focus: FOCUS_POINTS[1],
     mood: MOODS[0],
     stars: 5,
     style: STYLES[0],
     dishes: [],
+    useEmoji: true,
+    structure: 'paragraph'
   });
   const [customInput, setCustomInput] = useState('');
   
@@ -112,8 +114,8 @@ export default function App() {
     else if (randPeople > 0.4) people = Math.floor(Math.random() * 3) + 2; // 2-4
     else people = 1;
 
-    // Random word count 50-120
-    const randWordCount = Math.floor(Math.random() * 70) + 50;
+    // Random word count 30-100
+    const randWordCount = Math.floor(Math.random() * 70) + 30;
 
     setTags({
       persona: pick(PERSONAS),
@@ -125,7 +127,9 @@ export default function App() {
       mood: pick(MOODS),
       style: pick(STYLES),
       stars: star,
-      dishes: selectedDishes
+      dishes: selectedDishes,
+      useEmoji: Math.random() > 0.5,
+      structure: Math.random() > 0.5 ? 'paragraph' : 'segmented'
     });
     
     // Haptic feedback
@@ -138,33 +142,39 @@ export default function App() {
     setResult(null);
 
     try {
-      // 1. Construct System Prompt
-      const systemPrompt = "你是一个精通小红书、大众点评和朋友圈文案的AI美食评论家。你需要根据用户提供的详细参数，为日式烤肉店'极屋鮨牛'写一段真实、有感染力的评价。";
+      // 1. Construct System Prompt - Dazhong Dianping Specific
+      const systemPrompt = "你是一位在大众点评写评价的真实顾客。你需要模拟普通人的语气，写出真实、自然、生活化的餐厅评价。切忌写成小红书风格（不要堆砌浮夸形容词，不要过度使用表情，不要像营销号）。";
 
-      // 2. Construct User Prompt with new fields
+      // 2. Logic toggles
+      const emojiInstruction = tags.useEmoji 
+        ? "允许使用少量Emoji（如😋、👍），但不要泛滥，最多1-2个。" 
+        : "严禁使用任何Emoji表情。";
+        
+      const structureInstruction = tags.structure === 'segmented'
+        ? "采用分点叙述或分段结构，逻辑清晰。"
+        : "输出为一整段话，中间不要换行。";
+
+      // 3. Construct User Prompt with detailed requirements
       const userTextDetails = `
-请模拟以下顾客进行评价：
-- 顾客身份：${tags.persona}
-- 用餐人数：${tags.people}人
-- 消费动机：${tags.motivation}
-- 预算敏感度：${tags.budget}
-- 关注重点：${tags.focus}
-- 当下心情：${tags.mood}
-- 综合评分：${tags.stars}星
-- 文案风格：${tags.style}
+任务：为日式烤肉店“极屋鮨牛”写一条评价。
 
-菜品体验：
-- 必点推荐：${tags.dishes.length > 0 ? tags.dishes.join(', ') : '无具体菜品偏好'}
+【必须包含的关键点】
+1. **核心服务**：一定要提到是“店员全程帮烤肉”，强调不用自己动手这一点（是加分项）。
+2. **顾客画像**：你是一个“${tags.persona}”，今天${tags.people}人来用餐。
+3. **真实感**：加入一点小细节或小瑕疵（例如排队久、环境有点吵、蘸料味道、价格小贵等），让评价看起来像真人写的。
+4. **语气风格**：${tags.style}。句子要长短结合，允许出现口语化的倒装、断句或轻微语病。不要像AI写的那么完美。
+5. **消费动机**：${tags.motivation}。
+6. **关注重点**：${tags.focus}。
+7. **推荐菜品**：${tags.dishes.length > 0 ? tags.dishes.join('、') : '肉都很不错'}。如果是视觉模型，请结合图片描述肉的纹理或色泽。
 
-额外补充说明：${customInput || '无'}
+【格式要求】
+- 字数：控制在 ${tags.wordCount} 字左右（10-100字之间）。
+- ${emojiInstruction}
+- ${structureInstruction}
+- 不要带标题，不要带“风格：xxx”的前缀，直接输出评价内容。
+- 总体是好评（${tags.stars}星），但要显得客观中立。
 
-【写作要求】
-1. 必须严格遵循“${tags.style}”的语气风格。
-2. 内容要包含对“${tags.focus}”的具体描述。
-3. 结合顾客身份（${tags.persona}）和用餐人数（${tags.people}人）来切入，让评价看起来非常真实。
-4. 字数控制在 ${tags.wordCount} 字左右。
-5. 适当使用Emoji，排版要适合手机阅读（分段清晰）。
-6. 如果有图片，请结合图片内容描述肉的色泽或摆盘。
+额外补充信息：${customInput || '无'}
       `.trim();
 
       const messages: ChatMessage[] = [

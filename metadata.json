@@ -1,0 +1,7 @@
+{
+  "name": "Copy of 极屋鮨牛·AI评价大师",
+  "description": "AI-powered review generator for Japanese BBQ restaurant staff, featuring vision capabilities and customizable personas.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
